@@ -4,26 +4,25 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
-import os
 
 # --- 1. Load Model dan Fitur ---
 # Menggunakan @st.cache_resource untuk menghindari loading berulang
 @st.cache_resource
 def load_resources():
     try:
-        # Load FULL PIPELINE
+        # Load FULL PIPELINE (Asumsi: Pipeline lo mencakup ColumnTransformer)
         model = joblib.load('best_dt_model.joblib')
         
         # Load daftar 8 kolom input mentah (dari file input_columns.joblib)
-        # File ini dibuat di model_creation.py (harus di-push!)
+        # File ini memastikan urutan kolom DataFrame yang masuk ke pipeline itu benar.
         input_cols = joblib.load('input_columns.joblib') 
         
         return model, input_cols
     except FileNotFoundError:
-        st.error("❌ ERROR GEDE: File model (.joblib) atau input_columns (.joblib) tidak ditemukan di server. Cek kembali Git push.")
+        st.error("❌ ERROR GEDE: File model (best_dt_model.joblib) atau input_columns (input_columns.joblib) tidak ditemukan di server. Cek kembali Git push.")
         st.stop()
     except Exception as e:
-        # Menangkap error loading model (biasanya mismatch versi scikit-learn)
+        # Menangkap error loading model (seringnya mismatch versi scikit-learn)
         st.error(f"⚠️ GAGAL LOAD MODEL! Cek versi scikit-learn di requirements.txt. Detail: {e}")
         st.stop()
 
@@ -32,13 +31,11 @@ model, input_cols = load_resources()
 
 
 # --- 2. Fungsi Prediksi (Menerima data mentah untuk Pipeline) ---
-# input_cols digunakan untuk memastikan urutan kolom DataFrame input
 def predict_diabetes(input_data, model, input_cols):
     
     # 1. BUAT DATAFRAME HANYA DARI KOLOM MENTAH (8 KOLOM ASLI)
-    # Semua data di-wrapping dalam list untuk membuat satu row
     data_dict = {
-        # URUTAN KEY DI SINI TIDAK TERLALU PENTING, asalkan NAMA KEY SAMA
+        # URUTAN KEY DI SINI TIDAK TERLALU PENTING, tapi NAMA KEY HARUS SAMA
         'gender': [input_data['gender']],
         'age': [input_data['age']],
         'hypertension': [input_data['hypertension']],
@@ -51,9 +48,10 @@ def predict_diabetes(input_data, model, input_cols):
     
     # KUNCI UTAMA: Membuat DataFrame dengan urutan kolom yang BENAR
     # Urutan diambil dari input_cols (yang dibuat saat training)
+    # Ini menjamin urutan input ke ColumnTransformer benar.
     input_df = pd.DataFrame(data_dict, columns=input_cols) 
     
-    # 2. MODEL.PREDICT: Pipeline menjalankan ColumnTransformer dengan input mentah
+    # 2. MODEL.PREDICT: Pipeline menjalankan ColumnTransformer + Model dengan input mentah
     prediction = model.predict(input_df) 
     prediction_proba = model.predict_proba(input_df)
     
@@ -62,7 +60,7 @@ def predict_diabetes(input_data, model, input_cols):
 
 # --- 3. Tampilan Streamlit ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
-st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree)")
+st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree Pipeline)")
 st.markdown("---")
 
 st.sidebar.header("Input Data Pasien")
@@ -81,15 +79,22 @@ with st.sidebar.form("input_form"):
     st.markdown("---")
     st.markdown("**Data Biometrik & Laboratorium**")
     
+    # AGE (INTEGER)
     age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1, format="%d")
+    
+    # BMI (2 Desimal)
     bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=70.0, value=25.0, step=0.01, format="%.2f")
+    
+    # HbA1c Level (2 Desimal)
     hba1c = st.number_input("HbA1c Level (%)", min_value=3.5, max_value=9.0, value=5.7, step=0.01, format="%.2f")
+    
+    # Blood Glucose (INTEGER)
     blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1, format="%d")
     
     st.markdown("---")
     submitted = st.form_submit_button("Prediksi Sekarang!")
 
-# Pemanggilan fungsi (sekitar Line 124 lo)
+# Pemanggilan fungsi
 if submitted:
     input_data = {
         'gender': gender,
@@ -102,7 +107,7 @@ if submitted:
         'blood_glucose_level': blood_glucose
     }
     
-    # Memanggil dengan variabel input_cols yang sudah diperbaiki
+    # Memanggil dengan variabel input_cols
     result, proba = predict_diabetes(input_data, model, input_cols) 
     
     st.subheader("Hasil Prediksi")
