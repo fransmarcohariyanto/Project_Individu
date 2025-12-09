@@ -1,61 +1,121 @@
-# model_creation.py
+# app.py - KODE FINAL DAN CLEAN (Solusi Anti-ValueError ColumnTransformer)
+
+import streamlit as st
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import joblib
+import numpy as np
+import os
 
-print("--- START: Model Creation Script ---")
+# --- 1. Load Model dan Fitur ---
+# Menggunakan @st.cache_resource untuk menghindari loading berulang
+@st.cache_resource
+def load_resources():
+    try:
+        # Load FULL PIPELINE
+        model = joblib.load('best_dt_model.joblib')
+        
+        # Load daftar 8 kolom input mentah (dari file input_columns.joblib)
+        # File ini dibuat di model_creation.py (harus di-push!)
+        input_cols = joblib.load('input_columns.joblib') 
+        
+        return model, input_cols
+    except FileNotFoundError:
+        st.error("❌ ERROR GEDE: File model (.joblib) atau input_columns (.joblib) tidak ditemukan di server. Cek kembali Git push.")
+        st.stop()
+    except Exception as e:
+        # Menangkap error loading model (biasanya mismatch versi scikit-learn)
+        st.error(f"⚠️ GAGAL LOAD MODEL! Cek versi scikit-learn di requirements.txt. Detail: {e}")
+        st.stop()
 
-# 1. LOAD DATA
-try:
-    data = pd.read_csv('diabetes_prediction_dataset.csv')
-except FileNotFoundError:
-    print("❌ ERROR: File data 'diabetes_prediction_dataset.csv' tidak ditemukan. Harap letakkan di folder yang sama.")
-    exit()
-
-# Handle 'Other' di gender (ganti dengan 'Other' yang konsisten)
-data['gender'] = data['gender'].replace('Other', 'Other') 
-
-X = data.drop('diabetes', axis=1)
-y = data['diabetes']
-
-# 2. PREPROCESSING PIPELINE
-numerical_features = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
-categorical_features = ['gender', 'smoking_history']
-binary_features = ['hypertension', 'heart_disease']
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', StandardScaler(), numerical_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), categorical_features),
-        ('bin', 'passthrough', binary_features)
-    ],
-    remainder='drop'
-)
-
-# 3. TRAINING MODEL
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-dt_model = DecisionTreeClassifier(max_depth=7, random_state=42)
-full_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
-                                ('classifier', dt_model)])
-
-full_pipeline.fit(X_train, y_train)
-print("✅ Model Decision Tree berhasil dilatih.")
+# Panggil fungsi caching
+model, input_cols = load_resources()
 
 
-# 4. SIMPAN MODEL (FULL PIPELINE)
-# Hanya simpan model Pipeline. Kita TIDAK lagi menyimpan model_features.joblib
-joblib.dump(full_pipeline, 'best_dt_model.joblib')
+# --- 2. Fungsi Prediksi (Menerima data mentah untuk Pipeline) ---
+# input_cols digunakan untuk memastikan urutan kolom DataFrame input
+def predict_diabetes(input_data, model, input_cols):
+    
+    # 1. BUAT DATAFRAME HANYA DARI KOLOM MENTAH (8 KOLOM ASLI)
+    # Semua data di-wrapping dalam list untuk membuat satu row
+    data_dict = {
+        # URUTAN KEY DI SINI TIDAK TERLALU PENTING, asalkan NAMA KEY SAMA
+        'gender': [input_data['gender']],
+        'age': [input_data['age']],
+        'hypertension': [input_data['hypertension']],
+        'heart_disease': [input_data['heart_disease']],
+        'smoking_history': [input_data['smoking_history']],
+        'bmi': [input_data['bmi']],
+        'HbA1c_level': [input_data['HbA1c_level']],
+        'blood_glucose_level': [input_data['blood_glucose_level']],
+    }
+    
+    # KUNCI UTAMA: Membuat DataFrame dengan urutan kolom yang BENAR
+    # Urutan diambil dari input_cols (yang dibuat saat training)
+    input_df = pd.DataFrame(data_dict, columns=input_cols) 
+    
+    # 2. MODEL.PREDICT: Pipeline menjalankan ColumnTransformer dengan input mentah
+    prediction = model.predict(input_df) 
+    prediction_proba = model.predict_proba(input_df)
+    
+    return prediction[0], prediction_proba[0]
 
-# Tambahkan satu file dummy untuk menghindari error lama
-# Daftar kolom input mentah yang dibutuhkan ColumnTransformer
-input_columns_for_app = X.columns.tolist() 
-joblib.dump(input_columns_for_app, 'input_columns.joblib') 
 
+# --- 3. Tampilan Streamlit ---
+st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
+st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree)")
+st.markdown("---")
 
-print("🚀 Dua file .joblib siap: 'best_dt_model.joblib' & 'input_columns.joblib'")
-print("--- END: Model Creation Script ---")
+st.sidebar.header("Input Data Pasien")
+
+with st.sidebar.form("input_form"):
+    # Input Kategori
+    gender = st.selectbox("Jenis Kelamin", ['Female', 'Male', 'Other'])
+    smoking_history = st.selectbox("Riwayat Merokok", [
+        'Tidak Pernah', 'Saat Ini', 'Dahulu (Former)',
+        'Pernah', 'Tidak Rutin', 'Tidak Diketahui'
+    ])
+    hypertension = st.selectbox("Riwayat Hipertensi", [0, 1], format_func=lambda x: 'Ya' if x==1 else 'Tidak')
+    heart_disease = st.selectbox("Riwayat Penyakit Jantung", [0, 1], format_func=lambda x: 'Ya' if x==1 else 'Tidak')
+
+    # Input Numerik
+    st.markdown("---")
+    st.markdown("**Data Biometrik & Laboratorium**")
+    
+    age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1, format="%d")
+    bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=70.0, value=25.0, step=0.01, format="%.2f")
+    hba1c = st.number_input("HbA1c Level (%)", min_value=3.5, max_value=9.0, value=5.7, step=0.01, format="%.2f")
+    blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1, format="%d")
+    
+    st.markdown("---")
+    submitted = st.form_submit_button("Prediksi Sekarang!")
+
+# Pemanggilan fungsi (sekitar Line 124 lo)
+if submitted:
+    input_data = {
+        'gender': gender,
+        'age': age,
+        'hypertension': hypertension,
+        'heart_disease': heart_disease,
+        'smoking_history': smoking_history,
+        'bmi': bmi,
+        'HbA1c_level': hba1c,
+        'blood_glucose_level': blood_glucose
+    }
+    
+    # Memanggil dengan variabel input_cols yang sudah diperbaiki
+    result, proba = predict_diabetes(input_data, model, input_cols) 
+    
+    st.subheader("Hasil Prediksi")
+    
+    if result == 1:
+        st.error(f"⚠️ Pasien DIPREDIKSI **MENGIDAP DIABETES**")
+    else:
+        st.success(f"✅ Pasien DIPREDIKSI **TIDAK MENGIDAP DIABETES**")
+        
+    st.markdown(f"**Tingkat Keyakinan Model:**")
+    col1, col2 = st.columns(2)
+    
+    col1.metric("Probabilitas Tidak Diabetes", f"{proba[0]*100:.2f}%")
+    col2.metric("Probabilitas Diabetes", f"{proba[1]*100:.2f}%")
+
+    st.caption("Disclaimer: Hasil ini hanya prediksi Machine Learning, bukan diagnosis medis.")
