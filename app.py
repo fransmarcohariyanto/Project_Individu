@@ -4,12 +4,10 @@ import joblib
 import numpy as np
 
 # --- 1. Load Model dan Fitur ---
-# Ini harus me-load 2 file, kalau salah satu gak ada, Streamlit error di sini.
 @st.cache_resource
 def load_resources():
     try:
         model = joblib.load('best_dt_model.joblib')
-        # feature_cols berisi 15 nama kolom hasil OHE (KUNCI UTAMA SINKRONISASI)
         feature_cols = joblib.load('model_features.joblib') 
         return model, feature_cols
     except FileNotFoundError:
@@ -25,12 +23,10 @@ model, feature_cols = load_resources()
 # --- 2. Fungsi Prediksi (ANTI-GAGAL KOLOM) ---
 def predict_diabetes(input_data, model, feature_cols):
     
-    # 🚨 PENCEGAHAN ERROR 1 (ValueError: columns are missing):
-    # Membuat DataFrame KOSONG dengan SEMUA 15 KOLOM OHE sesuai urutan feature_cols.
+    # 🚨 FIX ERROR KOLOM: Memastikan input_df punya 15 kolom OHE dengan nilai default 0
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
     
-    # 2. ISI KOLOM NUMERIK (DENGAN HARDCASTING DAN .loc)
-    # PENTING: Semua harus sesuai tipe data yang di-training (int/float)
+    # ISI KOLOM NUMERIK
     input_df.loc[0, 'age'] = int(input_data['age']) 
     input_df.loc[0, 'hypertension'] = int(input_data['hypertension']) 
     input_df.loc[0, 'heart_disease'] = int(input_data['heart_disease']) 
@@ -38,13 +34,12 @@ def predict_diabetes(input_data, model, feature_cols):
     input_df.loc[0, 'HbA1c_level'] = float(input_data['HbA1c_level'])
     input_df.loc[0, 'blood_glucose_level'] = int(input_data['blood_glucose_level'])
     
-    # 3. ISI KOLOM OHE (Manual Mapping dan .loc)
+    # ISI KOLOM OHE (Manual Mapping)
     
     # Gender
     gender_map = {'Female': 'gender_Female', 'Male': 'gender_Male', 'Other': 'gender_Other'}
     col_gender = gender_map.get(input_data['gender'])
     if col_gender in feature_cols:
-        # Menyetel nilai 1 di kolom OHE yang BENAR
         input_df.loc[0, col_gender] = 1 
 
     # Smoking History
@@ -55,10 +50,9 @@ def predict_diabetes(input_data, model, feature_cols):
     }
     col_smoking = smoking_map.get(input_data['smoking_history'])
     if col_smoking in feature_cols:
-        # Menyetel nilai 1 di kolom OHE yang BENAR
         input_df.loc[0, col_smoking] = 1 
 
-    # 4. PREDIKSI
+    # PREDIKSI
     prediction = model.predict(input_df) 
     prediction_proba = model.predict_proba(input_df)
     
@@ -73,7 +67,6 @@ st.markdown("---")
 st.sidebar.header("Input Data Pasien")
 
 with st.sidebar.form("input_form"):
-    # Input Kategori (Pastikan mappingnya benar di predict_diabetes)
     gender = st.selectbox("Jenis Kelamin", ['Female', 'Male', 'Other'])
     smoking_history = st.selectbox("Riwayat Merokok", [
         'Tidak Pernah', 'Saat Ini', 'Dahulu (Former)',
@@ -85,7 +78,6 @@ with st.sidebar.form("input_form"):
     st.markdown("---")
     st.markdown("**Data Biometrik & Laboratorium**")
     
-    # Input Numerik (Pastikan formatnya benar)
     age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1, format="%d")
     bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=70.0, value=25.0, step=0.01, format="%.2f")
     hba1c = st.number_input("HbA1c Level (%)", min_value=3.5, max_value=9.0, value=5.7, step=0.01, format="%.2f")
@@ -100,7 +92,6 @@ if submitted:
         'smoking_history': smoking_history, 'bmi': bmi, 'HbA1c_level': hba1c, 'blood_glucose_level': blood_glucose
     }
     
-    # 🚨 PENCEGAHAN ERROR 2 (Semua data input dilempar ke fungsi prediksi)
     result, proba = predict_diabetes(input_data, model, feature_cols) 
     
     st.subheader("Hasil Prediksi")
