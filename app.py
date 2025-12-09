@@ -7,7 +7,7 @@ import numpy as np
 @st.cache_resource
 def load_resources():
     try:
-        # Memuat model RF baru (best_dt_model.joblib)
+        # Memuat model DT yang baru (best_dt_model.joblib)
         model = joblib.load('best_dt_model.joblib')
         # feature_cols berisi 15 nama kolom hasil OHE
         feature_cols = joblib.load('model_features.joblib') 
@@ -63,8 +63,7 @@ def predict_diabetes(input_data, model, feature_cols):
 
 # --- 3. Tampilan Streamlit ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
-# Ganti nama di sini jadi Random Forest
-st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Random Forest Randomized Search)") 
+st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree Randomized Search)")
 st.markdown("---")
 
 st.sidebar.header("Input Data Pasien")
@@ -111,4 +110,3 @@ if submitted:
     col2.metric("Probabilitas Diabetes", f"{proba[1]*100:.2f}%")
 
     st.caption("Disclaimer: Hasil ini hanya prediksi Machine Learning, bukan diagnosis medis.")
-    
