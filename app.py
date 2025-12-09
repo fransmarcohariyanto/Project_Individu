@@ -1,4 +1,4 @@
-# app.py - KODE FINAL DAN CLEAN (Solusi Anti-ValueError ColumnTransformer)
+# app.py - KODE FINAL DAN CLEAN (Solusi Decision Tree OHE Manual)
 
 import streamlit as st
 import pandas as pd
@@ -6,52 +6,63 @@ import joblib
 import numpy as np
 
 # --- 1. Load Model dan Fitur ---
-# Menggunakan @st.cache_resource untuk menghindari loading berulang
 @st.cache_resource
 def load_resources():
     try:
-        # Load FULL PIPELINE (Asumsi: Pipeline lo mencakup ColumnTransformer)
+        # Load Model Decision Tree Murni (BUKAN Pipeline)
         model = joblib.load('best_dt_model.joblib')
         
-        # Load daftar 8 kolom input mentah (dari file input_columns.joblib)
-        # File ini memastikan urutan kolom DataFrame yang masuk ke pipeline itu benar.
-        input_cols = joblib.load('input_columns.joblib') 
+        # Load daftar 15 kolom hasil OHE (INI KUNCI URUTAN)
+        feature_cols = joblib.load('model_features.joblib') 
         
-        return model, input_cols
+        return model, feature_cols
     except FileNotFoundError:
-        st.error("❌ ERROR GEDE: File model (best_dt_model.joblib) atau input_columns (input_columns.joblib) tidak ditemukan di server. Cek kembali Git push.")
+        st.error("❌ ERROR GEDE: Pastikan file best_dt_model.joblib dan model_features.joblib sudah di-push.")
         st.stop()
     except Exception as e:
-        # Menangkap error loading model (seringnya mismatch versi scikit-learn)
         st.error(f"⚠️ GAGAL LOAD MODEL! Cek versi scikit-learn di requirements.txt. Detail: {e}")
         st.stop()
 
 # Panggil fungsi caching
-model, input_cols = load_resources()
+model, feature_cols = load_resources()
 
 
-# --- 2. Fungsi Prediksi (Menerima data mentah untuk Pipeline) ---
-def predict_diabetes(input_data, model, input_cols):
+# --- 2. Fungsi Prediksi (MENGURUS OHE SECARA MANUAL) ---
+def predict_diabetes(input_data, model, feature_cols):
     
-    # 1. BUAT DATAFRAME HANYA DARI KOLOM MENTAH (8 KOLOM ASLI)
-    data_dict = {
-        # URUTAN KEY DI SINI TIDAK TERLALU PENTING, tapi NAMA KEY HARUS SAMA
-        'gender': [input_data['gender']],
-        'age': [input_data['age']],
-        'hypertension': [input_data['hypertension']],
-        'heart_disease': [input_data['heart_disease']],
-        'smoking_history': [input_data['smoking_history']],
-        'bmi': [input_data['bmi']],
-        'HbA1c_level': [input_data['HbA1c_level']],
-        'blood_glucose_level': [input_data['blood_glucose_level']],
+    # 1. BUAT DATAFRAME KOSONG SESUAI URUTAN 15 KOLOM OHE
+    input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
+    
+    # 2. ISI KOLOM NUMERIK (DENGAN HARDCASTING)
+    # Ini menjamin tidak ada error tipe data/format
+    input_df['age'] = int(input_data['age']) 
+    input_df['hypertension'] = int(input_data['hypertension']) 
+    input_df['heart_disease'] = int(input_data['heart_disease']) 
+    input_df['bmi'] = float(input_data['bmi'])
+    input_df['HbA1c_level'] = float(input_data['HbA1c_level'])
+    input_df['blood_glucose_level'] = int(input_data['blood_glucose_level'])
+    
+    # 3. ISI KOLOM OHE (Manual Mapping)
+    # Gender
+    gender_map = {'Female': 'gender_Female', 'Male': 'gender_Male', 'Other': 'gender_Other'}
+    col_gender = gender_map.get(input_data['gender'])
+    if col_gender in feature_cols:
+        input_df[col_gender] = 1
+
+    # Smoking History
+    smoking_map = {
+        'Tidak Pernah': 'smoking_history_never',
+        'Saat Ini': 'smoking_history_current',
+        'Dahulu (Former)': 'smoking_history_former',
+        'Pernah': 'smoking_history_ever',
+        'Tidak Rutin': 'smoking_history_not current',
+        'Tidak Diketahui': 'smoking_history_No Info'
     }
-    
-    # KUNCI UTAMA: Membuat DataFrame dengan urutan kolom yang BENAR
-    # Urutan diambil dari input_cols (yang dibuat saat training)
-    # Ini menjamin urutan input ke ColumnTransformer benar.
-    input_df = pd.DataFrame(data_dict, columns=input_cols) 
-    
-    # 2. MODEL.PREDICT: Pipeline menjalankan ColumnTransformer + Model dengan input mentah
+    col_smoking = smoking_map.get(input_data['smoking_history'])
+    if col_smoking in feature_cols:
+        input_df[col_smoking] = 1
+
+    # 4. PREDIKSI
     prediction = model.predict(input_df) 
     prediction_proba = model.predict_proba(input_df)
     
@@ -60,7 +71,7 @@ def predict_diabetes(input_data, model, input_cols):
 
 # --- 3. Tampilan Streamlit ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
-st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree Pipeline)")
+st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree OHE Manual)")
 st.markdown("---")
 
 st.sidebar.header("Input Data Pasien")
@@ -79,7 +90,7 @@ with st.sidebar.form("input_form"):
     st.markdown("---")
     st.markdown("**Data Biometrik & Laboratorium**")
     
-    # AGE (INTEGER)
+    # AGE (INTEGER, format="%d")
     age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1, format="%d")
     
     # BMI (2 Desimal)
@@ -88,7 +99,7 @@ with st.sidebar.form("input_form"):
     # HbA1c Level (2 Desimal)
     hba1c = st.number_input("HbA1c Level (%)", min_value=3.5, max_value=9.0, value=5.7, step=0.01, format="%.2f")
     
-    # Blood Glucose (INTEGER)
+    # Blood Glucose (INTEGER, format="%d")
     blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1, format="%d")
     
     st.markdown("---")
@@ -107,8 +118,8 @@ if submitted:
         'blood_glucose_level': blood_glucose
     }
     
-    # Memanggil dengan variabel input_cols
-    result, proba = predict_diabetes(input_data, model, input_cols) 
+    # Memanggil dengan variabel feature_cols
+    result, proba = predict_diabetes(input_data, model, feature_cols) 
     
     st.subheader("Hasil Prediksi")
     
