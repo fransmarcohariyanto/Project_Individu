@@ -28,7 +28,7 @@ def predict_diabetes(input_data, model, feature_cols):
     # Ini WAJIB untuk mengatasi ValueError: columns are missing
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
     
-    # 2. ISI KOLOM NUMERIK (DENGAN HARDCASTING DAN .loc)
+    # 2. ISI KOLOM NUMERIK (DENGAN HARDCASTING INTEGER UNTUK AGE & BG)
     input_df.loc[0, 'age'] = int(input_data['age']) 
     input_df.loc[0, 'hypertension'] = int(input_data['hypertension']) 
     input_df.loc[0, 'heart_disease'] = int(input_data['heart_disease']) 
@@ -54,7 +54,7 @@ def predict_diabetes(input_data, model, feature_cols):
     if col_smoking in feature_cols:
         input_df.loc[0, col_smoking] = 1 
 
-    # 4. PREDIKSI (Urutan Kolom Dijamin Aman)
+    # 4. PREDIKSI
     prediction = model.predict(input_df) 
     prediction_proba = model.predict_proba(input_df)
     
