@@ -1,10 +1,6 @@
 # [CELL 4 - REVISI TERAKHIR] Otomasi Pembuatan app.py (Input Integer Age)
 print("\n--- [START] CELL 4: Creating app.py (Final Fix Input Age) ---")
 import os
-# Path ke direktori script Streamlit lo
-BASE_DIR = os.path.dirname(os.path.abspath("C:\Users\ACER\Downloads\Project_datnal_keseluruhan\FransMarcoHaryanto_Individu_Datnal_IS388_C_00000108659")) 
-# Gabungin dengan nama file model
-MODEL_PATH = os.path.join(BASE_DIR, 'assets', 'model.h5')
 
 # Contoh Load
 # model = load_model(MODEL_PATH)
@@ -136,4 +132,5 @@ try:
     print("🚀 File 'app.py' sudah DI-FIX! Input Usia sekarang **PASTI** bilangan bulat.")
 except Exception as e:
     print(f"❌ Gagal membuat file app.py: {e}")
+
 
