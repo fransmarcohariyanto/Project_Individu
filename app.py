@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# --- 1. Load Model dan Fitur (MENGGUNAKAN NAMA FILE BARU) ---
+# --- 1. Load Model dan Fitur ---
 @st.cache_resource
 def load_resources():
     try:
@@ -22,27 +22,26 @@ def load_resources():
 model, feature_cols = load_resources()
 
 
-# --- 2. Fungsi Prediksi (ANTI-GAGAL KOLOM) ---
+# --- 2. Fungsi Prediksi (MENGGUNAKAN REINDEX MUTLAK) ---
 def predict_diabetes(input_data, model, feature_cols):
     
-    # FIX ERROR KOLOM: Membuat input_df punya 15 kolom OHE dengan nilai default 0
-    input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
-    
-    # ISI KOLOM NUMERIK (Memastikan Tipe Data Benar)
-    input_df.loc[0, 'age'] = int(input_data['age']) 
-    input_df.loc[0, 'hypertension'] = int(input_data['hypertension']) 
-    input_df.loc[0, 'heart_disease'] = int(input_data['heart_disease']) 
-    input_df.loc[0, 'bmi'] = float(input_data['bmi'])
-    input_df.loc[0, 'HbA1c_level'] = float(input_data['HbA1c_level'])
-    input_df.loc[0, 'blood_glucose_level'] = int(input_data['blood_glucose_level'])
-    
-    # ISI KOLOM OHE (Manual Mapping)
+    # Kumpulkan semua data input (numerical dan OHE) ke dictionary
+    data_dict = {
+        'age': [int(input_data['age'])],
+        'hypertension': [int(input_data['hypertension'])],
+        'heart_disease': [int(input_data['heart_disease'])],
+        'bmi': [float(input_data['bmi'])],
+        'HbA1c_level': [float(input_data['HbA1c_level'])],
+        'blood_glucose_level': [int(input_data['blood_glucose_level'])]
+    }
+
+    # Tambahkan kolom OHE
     
     # Gender
     gender_map = {'Female': 'gender_Female', 'Male': 'gender_Male', 'Other': 'gender_Other'}
     col_gender = gender_map.get(input_data['gender'])
-    if col_gender in feature_cols:
-        input_df.loc[0, col_gender] = 1 
+    if col_gender:
+        data_dict[col_gender] = [1] 
 
     # Smoking History
     smoking_map = {
@@ -51,9 +50,17 @@ def predict_diabetes(input_data, model, feature_cols):
         'Tidak Rutin': 'smoking_history_not current', 'Tidak Diketahui': 'smoking_history_No Info'
     }
     col_smoking = smoking_map.get(input_data['smoking_history'])
-    if col_smoking in feature_cols:
-        input_df.loc[0, col_smoking] = 1 
+    if col_smoking:
+        data_dict[col_smoking] = [1]
+        
+    # Buat DataFrame dari input yang ada
+    # HARUS PAKAI PANDAS 1.3 KE ATAS UNTUK from_dict DENGAN LIST
+    temp_df = pd.DataFrame.from_dict(data_dict)
 
+    # REINDEX MUTLAK: Memastikan urutan kolom input SAMA PERSIS dengan urutan kolom training
+    # Kolom yang ada di feature_cols tapi tidak ada di temp_df akan diisi 0 (INI KUNCI FIX-NYA!)
+    input_df = temp_df.reindex(columns=feature_cols, fill_value=0)
+    
     # PREDIKSI
     prediction = model.predict(input_df) 
     prediction_proba = model.predict_proba(input_df)
@@ -94,7 +101,11 @@ if submitted:
         'smoking_history': smoking_history, 'bmi': bmi, 'HbA1c_level': hba1c, 'blood_glucose_level': blood_glucose
     }
     
-    result, proba = predict_diabetes(input_data, model, feature_cols) 
+    try:
+        result, proba = predict_diabetes(input_data, model, feature_cols) 
+    except ValueError as ve:
+        st.error(f"❌ ERROR PREDIKSI: Ada masalah fatal pada kolom input. Pastikan file 'model_features.joblib' sesuai dengan model.")
+        st.stop()
     
     st.subheader("Hasil Prediksi")
     
