@@ -2,4 +2,4 @@ streamlit
 pandas
 numpy
 joblib
-scikit-learn==X.Y.Z
+scikit-learn==X.Y.Z  # Ganti X.Y.Z dengan versi persis di local lo!
