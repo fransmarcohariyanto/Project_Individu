@@ -1,3 +1,26 @@
+# Tambahkan ini di bagian awal app.py lo, setelah import joblib
+import os
+import streamlit as st # Pastikan ini udah diimport
+
+st.subheader("--- DEBUGGING FILES ---")
+st.write(f"Current Directory: {os.getcwd()}")
+try:
+    st.write("List Files in Root Dir:")
+    st.write(os.listdir('.'))
+    # Coba cek apakah file model terlihat
+    if 'best_dt_model.joblib' in os.listdir('.'):
+        st.success("✅ File model TERLIHAT!")
+    else:
+        st.error("❌ File model TIDAK TERLIHAT di root directory!")
+except Exception as e:
+    st.warning(f"Gagal listing directory: {e}")
+st.markdown("---")
+
+
+# ... Lanjutkan kode @st.cache_resource def load_resources():
+# ... dst
+
+
 # model_creation.py
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -57,3 +80,4 @@ joblib.dump(final_features, 'model_features.joblib')
 
 print("🚀 Dua file .joblib siap: 'best_dt_model.joblib' & 'model_features.joblib'")
 print("--- END: Model Creation Script ---")
+
