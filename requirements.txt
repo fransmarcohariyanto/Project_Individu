@@ -3,4 +3,4 @@ streamlit
 pandas
 numpy
 joblib
-scikit-learn==X.Y.Z
+scikit-learn==X.Y.Z # GANTI DENGAN VERSI PERSIS DI LOCAL LO!
