@@ -1,7 +1,7 @@
-# [CELL 4 - REVISI TERAKHIR] Otomasi Pembuatan app.py (Input Integer Age)
-print("\n--- [START] CELL 4: Creating app.py (Final Fix Input Age) ---")
+# [CELL 4 - REVISI] Otomasi Pembuatan app.py (Input Lebih Jelas)
+print("\n--- [START] CELL 4: Creating app.py (Revisi Input) ---")
 
-app_py_content_final_fix = """
+app_py_content_revisi = """
 import streamlit as st
 import pandas as pd
 import joblib
@@ -15,13 +15,12 @@ except FileNotFoundError:
     st.error("Error: File model atau fitur tidak ditemukan. Pastikan sudah menjalankan semua cell di Jupyter Notebook.")
     st.stop()
 
-# --- 2. Fungsi Prediksi (Logic tetap sama dan sudah benar) ---
+# --- 2. Fungsi Prediksi (Sama seperti sebelumnya, karena logicnya sudah benar) ---
 def predict_diabetes(input_data):
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
 
     # Mengisi kolom numerik
-    # Pastikan age yang di-input ke model adalah integer
-    input_df['age'] = int(input_data['age']) 
+    input_df['age'] = input_data['age']
     input_df['hypertension'] = input_data['hypertension']
     input_df['heart_disease'] = input_data['heart_disease']
     input_df['bmi'] = input_data['bmi']
@@ -54,7 +53,7 @@ def predict_diabetes(input_data):
     return prediction[0], prediction_proba[0]
 
 
-# --- 3. Tampilan Streamlit (FINAL FIX INPUT AGE) ---
+# --- 3. Tampilan Streamlit (REVISI INPUT) ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
 
 st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree)")
@@ -72,21 +71,21 @@ with st.sidebar.form("input_form"):
     hypertension = st.selectbox("Riwayat Hipertensi", [0, 1], format_func=lambda x: 'Ya' if x==1 else 'Tidak')
     heart_disease = st.selectbox("Riwayat Penyakit Jantung", [0, 1], format_func=lambda x: 'Ya' if x==1 else 'Tidak')
 
-    # Input Numerik
+    # Input Numerik (DIGANTI DENGAN st.number_input)
     st.markdown("---")
     st.markdown("**Data Biometrik & Laboratorium**")
     
-    # UMUR (SUDAH DIPAKSA INTEGER: format="%d")
-    age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1, format="%d") 
+    # UMUR (DIBUAT INTEGER/Bilangan Bulat)
+    age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1)
     
-    # BMI (Desimal 2 Angka)
+    # BMI (Dengan Desimal 2 Angka)
     bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=70.0, value=25.0, step=0.01, format="%.2f")
     
-    # HbA1c Level (Desimal 2 Angka)
+    # HbA1c Level (Dengan Desimal 2 Angka)
     hba1c = st.number_input("HbA1c Level (%)", min_value=3.5, max_value=9.0, value=5.7, step=0.01, format="%.2f")
     
-    # Blood Glucose Level (INTEGER)
-    blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1, format="%d")
+    # Blood Glucose Level (DIBUAT INTEGER/Bilangan Bulat)
+    blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1)
     
     # Tombol Submit
     st.markdown("---")
@@ -125,12 +124,7 @@ if submitted:
 # Tulis konten app.py yang sudah direvisi ke file
 try:
     with open('app.py', 'w') as f:
-        f.write(app_py_content_final_fix)
-
-git add app.py
-git commit -m "FINAL FIX: Ensure Age input is strictly integer (format='%d')"
-git push
-    print("🚀 File 'app.py' sudah DI-FIX! Input Usia sekarang **PASTI** bilangan bulat.")
+        f.write(app_py_content_revisi)
+    print("🚀 File 'app.py' sudah DI-REVISI! Input Umur, BMI, dan Gula Darah sekarang lebih presisi.")
 except Exception as e:
     print(f"❌ Gagal membuat file app.py: {e}")
-
