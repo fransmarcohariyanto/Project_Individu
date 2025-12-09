@@ -7,6 +7,7 @@ import numpy as np
 @st.cache_resource
 def load_resources():
     try:
+        # Nama file tetap 'best_dt_model.joblib' meskipun isinya Random Forest
         model = joblib.load('best_dt_model.joblib')
         # feature_cols berisi 15 nama kolom hasil OHE
         feature_cols = joblib.load('model_features.joblib') 
@@ -24,10 +25,10 @@ model, feature_cols = load_resources()
 # --- 2. Fungsi Prediksi (ANTI-GAGAL KOLOM) ---
 def predict_diabetes(input_data, model, feature_cols):
     
-    # KUNCI FIX ERROR: Membuat input_df punya 15 kolom OHE dengan nilai default 0
+    # FIX ERROR KOLOM: Membuat input_df punya 15 kolom OHE dengan nilai default 0
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
     
-    # ISI KOLOM NUMERIK
+    # ISI KOLOM NUMERIK (Memastikan Tipe Data Benar)
     input_df.loc[0, 'age'] = int(input_data['age']) 
     input_df.loc[0, 'hypertension'] = int(input_data['hypertension']) 
     input_df.loc[0, 'heart_disease'] = int(input_data['heart_disease']) 
@@ -62,7 +63,7 @@ def predict_diabetes(input_data, model, feature_cols):
 
 # --- 3. Tampilan Streamlit ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
-st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree Randomized Search)")
+st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Random Forest Randomized Search)")
 st.markdown("---")
 
 st.sidebar.header("Input Data Pasien")
