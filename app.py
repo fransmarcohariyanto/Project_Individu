@@ -126,6 +126,11 @@ if submitted:
 try:
     with open('app.py', 'w') as f:
         f.write(app_py_content_final_fix)
+
+git add app.py
+git commit -m "FINAL FIX: Ensure Age input is strictly integer (format='%d')"
+git push
     print("🚀 File 'app.py' sudah DI-FIX! Input Usia sekarang **PASTI** bilangan bulat.")
 except Exception as e:
     print(f"❌ Gagal membuat file app.py: {e}")
+
