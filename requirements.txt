@@ -1,8 +1,6 @@
 # requirements.txt
-# Versi Python default Streamlit Cloud adalah 3.9/3.10
 streamlit
 pandas
 numpy
 joblib
-# GANTI VERSI INI DENGAN YANG LO PAKAI DI LOCAL!
 scikit-learn==X.Y.Z
