@@ -1,44 +1,3 @@
-import pandas as pd
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from sklearn.tree import DecisionTreeClassifier
-from scipy.stats import randint
-import joblib
-
-# ==============================================================================
-# A. PREPROCESSING DAN TRAINING (Decision Tree Randomized Search)
-# ==============================================================================
-print("--- [START] SINKRONISASI FILE DEPLOYMENT ---")
-
-# 1. Load Data
-df = pd.read_csv('diabetes_prediction_dataset.csv')
-X = df.drop('diabetes', axis=1)
-y = df['diabetes']
-
-# 2. One-Hot Encoding (Manual)
-X_processed = pd.get_dummies(X, columns=['gender', 'smoking_history'], drop_first=False)
-
-# 3. Simpan Daftar Kolom OHE (INI KUNCI URUTAN)
-feature_cols = X_processed.columns.tolist()
-
-# 4. Training (Diulang untuk menjamin best_dt_model.joblib terbaru)
-param_dist = {
-    'max_depth': [3, 4, 5, 6, 7, None], 'min_samples_split': randint(2, 20),
-    'min_samples_leaf': randint(1, 20), 'max_features': [None, 'sqrt', 'log2'],
-}
-dt_model = DecisionTreeClassifier(random_state=42)
-randomized_search = RandomizedSearchCV(dt_model, param_distributions=param_dist, n_iter=100, cv=5, scoring='accuracy', n_jobs=-1, random_state=42)
-randomized_search.fit(X_processed, y) # Fit pada seluruh X_processed
-best_model = randomized_search.best_estimator_
-
-# 5. Simpan Model dan Daftar Kolom
-joblib.dump(best_model, 'best_dt_model.joblib')
-joblib.dump(feature_cols, 'model_features.joblib')
-print("✅ 2 file joblib tersimpan dan sinkron.")
-
-# ==============================================================================
-# B. BUAT app.py (FIXED DENGAN .loc DAN HARDCASTING)
-# ==============================================================================
-app_py_content = """
 import streamlit as st
 import pandas as pd
 import joblib
@@ -49,13 +8,14 @@ import numpy as np
 def load_resources():
     try:
         model = joblib.load('best_dt_model.joblib')
+        # feature_cols berisi 15 nama kolom hasil OHE (Kunci sinkronisasi)
         feature_cols = joblib.load('model_features.joblib') 
         return model, feature_cols
     except FileNotFoundError:
         st.error("❌ ERROR GEDE: Pastikan 4 file deployment sudah di-push.")
         st.stop()
     except Exception as e:
-        st.error(f"⚠️ GAGAL LOAD MODEL! Cek requirements.txt. Detail: {e}")
+        st.error(f"⚠️ GAGAL LOAD MODEL! Cek versi scikit-learn di requirements.txt. Detail: {e}")
         st.stop()
 
 model, feature_cols = load_resources()
@@ -65,10 +25,10 @@ model, feature_cols = load_resources()
 def predict_diabetes(input_data, model, feature_cols):
     
     # 1. BUAT DATAFRAME KOSONG DENGAN SEMUA 15 KOLOM OHE (Default: 0)
+    # Ini WAJIB untuk mengatasi ValueError: columns are missing
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
     
     # 2. ISI KOLOM NUMERIK (DENGAN HARDCASTING DAN .loc)
-    # Gunakan .loc[0, 'kolom'] untuk assignment yang aman ke DataFrame
     input_df.loc[0, 'age'] = int(input_data['age']) 
     input_df.loc[0, 'hypertension'] = int(input_data['hypertension']) 
     input_df.loc[0, 'heart_disease'] = int(input_data['heart_disease']) 
@@ -150,23 +110,3 @@ if submitted:
     col2.metric("Probabilitas Diabetes", f"{proba[1]*100:.2f}%")
 
     st.caption("Disclaimer: Hasil ini hanya prediksi Machine Learning, bukan diagnosis medis.")
-"""
-with open('app.py', 'w') as f:
-    f.write(app_py_content)
-print("✅ app.py tersimpan.")
-
-
-# ==============================================================================
-# C. BUAT requirements.txt (Final)
-# ==============================================================================
-requirements_content = """
-streamlit
-pandas
-scikit-learn
-joblib
-numpy
-"""
-with open('requirements.txt', 'w') as f:
-    f.write(requirements_content)
-print("✅ requirements.txt tersimpan.")
-print("\n--- SEMUA FILE SUDAH SINKRON DAN SIAP PUSH ---")
