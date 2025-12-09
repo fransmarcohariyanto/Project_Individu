@@ -3,20 +3,20 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# --- 1. Load Model dan Fitur ---
+# --- 1. Load Model dan Fitur (MENGGUNAKAN NAMA FILE BARU) ---
 @st.cache_resource
 def load_resources():
     try:
-        # Memuat model Random Forest (Gabungan Decision Tree)
-        model = joblib.load('best_dt_model.joblib')
-        # feature_cols berisi 15 nama kolom hasil OHE
+        # PANGGIL NAMA FILE RANDOM FOREST YANG BARU DAN FIX!
+        model = joblib.load('random_forest_fix.joblib')
+        # feature_cols (list kolom OHE)
         feature_cols = joblib.load('model_features.joblib') 
         return model, feature_cols
     except FileNotFoundError:
-        st.error("❌ ERROR GEDE: Pastikan 4 file deployment sudah di-push.")
+        st.error("❌ ERROR GEDE: Pastikan file 'random_forest_fix.joblib' dan 'model_features.joblib' sudah di-push ke root GitHub.")
         st.stop()
     except Exception as e:
-        st.error(f"⚠️ GAGAL LOAD MODEL! Cek versi scikit-learn di requirements.txt. Detail: {e}")
+        st.error(f"⚠️ GAGAL LOAD MODEL! Pastikan library di requirements.txt sudah benar. Detail: {e}")
         st.stop()
 
 model, feature_cols = load_resources()
@@ -63,8 +63,7 @@ def predict_diabetes(input_data, model, feature_cols):
 
 # --- 3. Tampilan Streamlit ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
-# JUDUL SESUAI PERMINTAAN LO
-st.title("👨‍🔬 MACHINE PREDIKSI DIABETES RANDOM FOREST X DECISION TREE")
+st.title("👨‍🔬 MACHINE PREDIKSI DIABETES RANDOM FOREST X DECISION TREE (FIXED)")
 st.markdown("---")
 
 st.sidebar.header("Input Data Pasien")
