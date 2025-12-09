@@ -1,31 +1,31 @@
-# [CELL 4 - REVISI] Otomasi Pembuatan app.py (Input Lebih Jelas)
-print("\n--- [START] CELL 4: Creating app.py (Revisi Input) ---")
-
-app_py_content_revisi = """
 import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
 
 # --- 1. Load Model dan Fitur ---
+# Pastikan 'best_dt_model.joblib' dan 'model_features.joblib' ada di folder yang sama
 try:
     model = joblib.load('best_dt_model.joblib')
     feature_cols = joblib.load('model_features.joblib')
 except FileNotFoundError:
-    st.error("Error: File model atau fitur tidak ditemukan. Pastikan sudah menjalankan semua cell di Jupyter Notebook.")
+    st.error("Error: File model (best_dt_model.joblib) atau fitur (model_features.joblib) tidak ditemukan.")
     st.stop()
 
-# --- 2. Fungsi Prediksi (Sama seperti sebelumnya, karena logicnya sudah benar) ---
+# --- 2. Fungsi Prediksi (DENGAN HARDCASTING TIPE DATA) ---
+# Logic ini memastikan input dari Streamlit widget dikonversi ke tipe data yang benar
+# sebelum dimasukkan ke model Decision Tree.
 def predict_diabetes(input_data):
+    # Buat DataFrame kosong dengan semua 15 kolom yang dibutuhkan model
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
 
-    # Mengisi kolom numerik
-    input_df['age'] = input_data['age']
-    input_df['hypertension'] = input_data['hypertension']
-    input_df['heart_disease'] = input_data['heart_disease']
-    input_df['bmi'] = input_data['bmi']
-    input_df['HbA1c_level'] = input_data['HbA1c_level']
-    input_df['blood_glucose_level'] = input_data['blood_glucose_level']
+    # Mengisi kolom numerik dengan hardcast ke tipe data yang benar
+    input_df['age'] = int(input_data['age']) 
+    input_df['hypertension'] = int(input_data['hypertension']) 
+    input_df['heart_disease'] = int(input_data['heart_disease']) 
+    input_df['bmi'] = float(input_data['bmi'])
+    input_df['HbA1c_level'] = float(input_data['HbA1c_level'])
+    input_df['blood_glucose_level'] = int(input_data['blood_glucose_level']) 
     
     # Mengisi kolom One-Hot Encoding
     if input_data['gender'] == 'Female':
@@ -47,13 +47,14 @@ def predict_diabetes(input_data):
     if col_name:
         input_df[col_name] = 1
 
+    # Lakukan Prediksi
     prediction = model.predict(input_df)
     prediction_proba = model.predict_proba(input_df)
     
     return prediction[0], prediction_proba[0]
 
 
-# --- 3. Tampilan Streamlit (REVISI INPUT) ---
+# --- 3. Tampilan Streamlit (FINAL FIX INPUT INTEGER) ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
 
 st.title("👨‍🔬 Aplikasi Prediksi Diabetes (Decision Tree)")
@@ -62,7 +63,7 @@ st.markdown("---")
 st.sidebar.header("Input Data Pasien")
 
 with st.sidebar.form("input_form"):
-    # Input Kategori (TETAP)
+    # Input Kategori 
     gender = st.selectbox("Jenis Kelamin", ['Female', 'Male', 'Other'])
     smoking_history = st.selectbox("Riwayat Merokok", [
         'Tidak Pernah', 'Saat Ini', 'Dahulu (Former)', 
@@ -71,21 +72,21 @@ with st.sidebar.form("input_form"):
     hypertension = st.selectbox("Riwayat Hipertensi", [0, 1], format_func=lambda x: 'Ya' if x==1 else 'Tidak')
     heart_disease = st.selectbox("Riwayat Penyakit Jantung", [0, 1], format_func=lambda x: 'Ya' if x==1 else 'Tidak')
 
-    # Input Numerik (DIGANTI DENGAN st.number_input)
+    # Input Numerik
     st.markdown("---")
     st.markdown("**Data Biometrik & Laboratorium**")
     
-    # UMUR (DIBUAT INTEGER/Bilangan Bulat)
-    age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1)
+    # UMUR (DIPAKSA INTEGER)
+    age = st.number_input("Usia (Tahun)", min_value=1, max_value=100, value=30, step=1, format="%d") 
     
-    # BMI (Dengan Desimal 2 Angka)
+    # BMI (Desimal 2 Angka)
     bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=70.0, value=25.0, step=0.01, format="%.2f")
     
-    # HbA1c Level (Dengan Desimal 2 Angka)
+    # HbA1c Level (Desimal 2 Angka)
     hba1c = st.number_input("HbA1c Level (%)", min_value=3.5, max_value=9.0, value=5.7, step=0.01, format="%.2f")
     
-    # Blood Glucose Level (DIBUAT INTEGER/Bilangan Bulat)
-    blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1)
+    # Blood Glucose Level (DIPAKSA INTEGER)
+    blood_glucose = st.number_input("Blood Glucose Level (mg/dL)", min_value=80, max_value=300, value=140, step=1, format="%d")
     
     # Tombol Submit
     st.markdown("---")
@@ -119,12 +120,3 @@ if submitted:
     col2.metric("Probabilitas Diabetes", f"{proba[1]*100:.2f}%")
 
     st.caption("Disclaimer: Hasil ini hanya prediksi Machine Learning, bukan diagnosis medis.")
-"""
-
-# Tulis konten app.py yang sudah direvisi ke file
-try:
-    with open('app.py', 'w') as f:
-        f.write(app_py_content_revisi)
-    print("🚀 File 'app.py' sudah DI-REVISI! Input Umur, BMI, dan Gula Darah sekarang lebih presisi.")
-except Exception as e:
-    print(f"❌ Gagal membuat file app.py: {e}")
