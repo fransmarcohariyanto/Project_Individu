@@ -8,6 +8,7 @@ import numpy as np
 def load_resources():
     try:
         model = joblib.load('best_dt_model.joblib')
+        # feature_cols berisi 15 nama kolom hasil OHE
         feature_cols = joblib.load('model_features.joblib') 
         return model, feature_cols
     except FileNotFoundError:
@@ -23,7 +24,7 @@ model, feature_cols = load_resources()
 # --- 2. Fungsi Prediksi (ANTI-GAGAL KOLOM) ---
 def predict_diabetes(input_data, model, feature_cols):
     
-    # 🚨 FIX ERROR KOLOM: Memastikan input_df punya 15 kolom OHE dengan nilai default 0
+    # KUNCI FIX ERROR: Membuat input_df punya 15 kolom OHE dengan nilai default 0
     input_df = pd.DataFrame(0, index=[0], columns=feature_cols)
     
     # ISI KOLOM NUMERIK
