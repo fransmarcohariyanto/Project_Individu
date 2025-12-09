@@ -1,3 +1,8 @@
+# app.py, sekitar Line 188
+    # Lakukan Prediksi
+    result, proba = predict_diabetes(input_data, model, feature_cols) 
+# ^^^ Disinilah crash-nya
+
 # Tambahkan ini di bagian awal app.py lo, setelah import joblib
 import os
 import streamlit as st # Pastikan ini udah diimport
@@ -80,4 +85,5 @@ joblib.dump(final_features, 'model_features.joblib')
 
 print("🚀 Dua file .joblib siap: 'best_dt_model.joblib' & 'model_features.joblib'")
 print("--- END: Model Creation Script ---")
+
 
