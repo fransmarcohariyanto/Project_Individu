@@ -13,7 +13,7 @@ def load_resources():
         feature_cols = joblib.load('model_features.joblib') 
         return model, feature_cols
     except FileNotFoundError:
-        st.error("❌ ERROR GEDE: Pastikan file 'random_forest_fix.joblib' dan 'model_features.joblib' sudah di-push ke root GitHub.")
+        st.error("❌ ERROR GEDE: Pastikan 4 file (app.py, random_forest_fix.joblib, model_features.joblib, requirements.txt) sudah di-push ke GitHub.")
         st.stop()
     except Exception as e:
         st.error(f"⚠️ GAGAL LOAD MODEL! Pastikan library di requirements.txt sudah benar. Detail: {e}")
@@ -27,6 +27,7 @@ def predict_diabetes(input_data, model, feature_cols):
     
     # Kumpulkan semua data input (numerical dan OHE) ke dictionary
     data_dict = {
+        # Input Numerik
         'age': [int(input_data['age'])],
         'hypertension': [int(input_data['hypertension'])],
         'heart_disease': [int(input_data['heart_disease'])],
@@ -54,11 +55,9 @@ def predict_diabetes(input_data, model, feature_cols):
         data_dict[col_smoking] = [1]
         
     # Buat DataFrame dari input yang ada
-    # HARUS PAKAI PANDAS 1.3 KE ATAS UNTUK from_dict DENGAN LIST
     temp_df = pd.DataFrame.from_dict(data_dict)
 
-    # REINDEX MUTLAK: Memastikan urutan kolom input SAMA PERSIS dengan urutan kolom training
-    # Kolom yang ada di feature_cols tapi tidak ada di temp_df akan diisi 0 (INI KUNCI FIX-NYA!)
+    # REINDEX MUTLAK: KUNCI FIX-NYA. Memastikan urutan kolom input SAMA PERSIS dengan urutan kolom training
     input_df = temp_df.reindex(columns=feature_cols, fill_value=0)
     
     # PREDIKSI
