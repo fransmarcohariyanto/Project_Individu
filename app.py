@@ -41,6 +41,9 @@ def predict_diabetes(input_data, model, feature_cols):
     input_df['bmi'] = float(input_data['bmi'])
     input_df['HbA1c_level'] = float(input_data['HbA1c_level'])
     input_df['blood_glucose_level'] = int(input_data['blood_glucose_level'])
+    # 4. PREDIKSI
+    prediction = model.predict(input_df) 
+    prediction_proba = model.predict_proba(input_df)
     
     # 3. ISI KOLOM OHE (Manual Mapping)
     # Gender
@@ -135,3 +138,4 @@ if submitted:
     col2.metric("Probabilitas Diabetes", f"{proba[1]*100:.2f}%")
 
     st.caption("Disclaimer: Hasil ini hanya prediksi Machine Learning, bukan diagnosis medis.")
+
