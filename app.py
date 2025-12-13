@@ -69,7 +69,7 @@ def predict_diabetes(input_data, model, feature_cols):
 
 # --- 3. Tampilan Streamlit ---
 st.set_page_config(page_title="Prediksi Diabetes", layout="wide")
-st.title("👨‍🔬 MACHINE PREDIKSI DIABETES RANDOM FOREST X DECISION TREE (FIXED)")
+st.title("👨‍🔬 MACHINE PREDIKSI DIABETES RANDOM FOREST X DECISION TREE")
 st.markdown("---")
 
 st.sidebar.header("Input Data Pasien")
@@ -120,3 +120,4 @@ if submitted:
     col2.metric("Probabilitas Diabetes", f"{proba[1]*100:.2f}%")
 
     st.caption("Disclaimer: Hasil ini hanya prediksi Machine Learning, bukan diagnosis medis.")
+
