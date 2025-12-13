@@ -12,21 +12,6 @@ st.set_page_config(
     page_icon="🔬" 
 ) 
 
-# Hapus CSS yang kurang perlu, biarkan Streamlit default bekerja.
-st.markdown(
-    """
-    <style>
-    /* Styling minimalis untuk tampilan yang lebih bersih */
-    .stApp {
-        background-color: #f0f2f6; /* Tetap pakai warna terang default untuk kesan formal */
-    }
-    .stButton>button {
-        border-radius: 8px; /* Lebih kecil, lebih formal */
-        font-weight: bold;
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
 
 @st.cache_resource
 def load_resources():
@@ -180,3 +165,4 @@ if submitted:
         st.dataframe(input_display, use_container_width=True)
         
         st.caption("Disclaimer: Hasil prediksi ini adalah estimasi statistik Machine Learning dan bukan merupakan diagnosis klinis. Pengambilan keputusan medis harus didasarkan pada pemeriksaan dokter profesional.")
+
